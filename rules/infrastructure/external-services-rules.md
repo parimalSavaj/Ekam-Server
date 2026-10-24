@@ -1,0 +1,136 @@
+# External Service Rules
+
+## Location
+
+- All external service integrations live in `src/infrastructure/external-services/` — one folder per third-party service.
+- Folder naming: `<service-name>/` (kebab-case, e.g., `email/`, `google-oauth/`, `stripe/`).
+
+## What Is an External Service
+
+An external service is any third-party system the application communicates with over the network:
+- Email providers (SendGrid, Resend, SES)
+- OAuth providers (Google, GitHub)
+- Payment gateways (Stripe)
+- Storage services (S3, Cloudinary)
+- Notification services (Twilio, Firebase)
+
+## What Is NOT an External Service
+
+- Database access → that's a **repository**.
+- Internal shared utilities (logger, jwt, config) → those are **shared services** in `src/shared/services/`.
+- Business logic → that belongs in **use cases**.
+
+## Folder Structure (per external service)
+
+Each external service folder contains exactly three files:
+
+```
+src/infrastructure/external-services/<name>/
+├── <name>.external-service.interface.ts    # Contract (what use cases depend on)
+├── <name>.types.ts                         # Request/response types for the API
+└── <name>.external-service.ts              # Implementation (HTTP calls)
+```
+
+## Types — `<name>.types.ts`
+
+Types specific to the external service — request payloads, response shapes, options.
+
+```ts
+export type <Action>Params = {
+  <field>: <type>;
+  <field>: <type>;
+};
+
+export type <Action>Result = {
+  <field>: <type>;
+  <field>: <type>;
+};
+```
+
+Rules:
+- Use `type` keyword — not `interface`.
+- Types describe what the external API expects and returns — not domain concepts.
+- One types file per external service folder.
+- Never put domain entities or enums here — import them from `domain/` if needed.
+
+## Interface — `<name>.external-service.interface.ts`
+
+Defines the contract so use cases are not coupled to the specific provider.
+
+```ts
+import { <Action>Params, <Action>Result } from './<name>.types';
+
+export interface I<PascalName>ExternalService {
+  <methodName>(params: <Action>Params): Promise<<Action>Result>;
+}
+```
+
+Rules:
+- Interface name: `I<PascalName>ExternalService` (e.g., `IEmailExternalService`, `IGoogleOAuthExternalService`).
+- Methods use the co-located types for parameters and return values.
+- No HTTP-specific details leak into the interface (no headers, no URLs, no status codes).
+- The interface represents "what" — not "how" or "which provider".
+
+## Implementation — `<name>.external-service.ts`
+
+The concrete class that makes HTTP calls to the third-party API.
+
+```ts
+import { I<PascalName>ExternalService } from './<name>.external-service.interface';
+import { <Action>Params, <Action>Result } from './<name>.types';
+import { ILoggerService } from '../../../shared/services/logger/logger.service.interface';
+import { config } from '../../../shared/config';
+
+export class <PascalName>ExternalService implements I<PascalName>ExternalService {
+  constructor(private readonly logger: ILoggerService) {}
+
+  async <methodName>(params: <Action>Params): Promise<<Action>Result> {
+    this.logger.info('<Action description>', { /* context */ });
+    // ... HTTP call implementation
+  }
+}
+```
+
+Rules:
+- Class name: `<PascalName>ExternalService` (e.g., `EmailExternalService`, `GoogleOAuthExternalService`).
+- Must implement its co-located interface.
+- Constructor receives dependencies (logger, config values) — injected via the module factory.
+- All config values (API keys, URLs, secrets) come from `shared/config/` — never hardcoded.
+- Handles HTTP errors internally — throws domain-friendly errors, never leaks raw API errors to use cases.
+- Logs all external calls via `ILoggerService` for observability.
+- No business logic — only API communication and response mapping.
+- **Only create what is needed** — only add methods when a use case actually requires them. Never speculatively add service methods that no current code calls.
+
+## Import Rules
+
+```
+<name>.external-service.ts imports:
+  → ./<name>.external-service.interface   (co-located interface)
+  → ./<name>.types                        (co-located types)
+  → shared/services/logger/logger.service.interface  (for ILoggerService)
+  → shared/config/                        (for API keys, URLs)
+  → domain/enums/                         (if needed for mapping)
+
+<name>.external-service.interface.ts imports:
+  → ./<name>.types                        (co-located types only)
+```
+
+## Wiring
+
+External services are instantiated in the module **factory** — same as repositories:
+
+```ts
+// Inside <name>.factory.ts
+const <serviceName> = new <PascalName>ExternalService(logger);
+const <useCaseName> = new <Action>UseCase(<repoName>, <serviceName>, logger);
+```
+
+- Use cases receive external service interfaces via constructor — never the concrete class.
+- Factories are the only place where concrete external service classes are imported and instantiated.
+
+## Swapping Providers
+
+Because use cases depend on the interface, swapping a provider means:
+1. Create a new implementation in the same folder (or a new folder for a different service).
+2. Change the factory to instantiate the new implementation.
+3. Use cases remain unchanged — they only know the interface.
