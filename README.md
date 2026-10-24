@@ -1,6 +1,49 @@
 # Ekam server
 
-Fresh backend repository. Runtime setup and feature implementation will be added incrementally.
+Standalone Express + TypeScript backend using native ESM. TypeScript targets ES2022 with NodeNext modules and resolution. Requires Node.js 22 or newer.
+
+## Run locally
+
+From this repository:
+
+```bash
+npm install
+npm run dev
+```
+
+Create this repository's `.env` from `.env.example` before starting locally, then set `HOST`, `PORT`, and `NODE_ENV`. All three are required and validated at startup; there are no silent defaults. The example uses `http://127.0.0.1:5000`. No database or credentials are needed for the health endpoint.
+
+Local development/tests read only this server's `.env`, without overriding variables already set by the process. The file is optional when the process provides every required setting.
+
+## Health check
+
+```bash
+curl http://127.0.0.1:5000/health
+```
+
+Returns HTTP 200 with:
+
+```json
+{"statusCode":200,"data":{"status":"ok"}}
+```
+
+This is a liveness check, not a database or external-service readiness check. The route lives in `src/modules/system/health.routes.ts`, using the flat system-module structure specified by the rules. Its OpenAPI contract is exported from `src/shared/services/swagger/swagger.config.ts`.
+
+## Validation and production
+
+```bash
+npm run typecheck
+npm run build
+npm start
+```
+
+Use Ctrl+C to stop a local server. SIGINT and SIGTERM trigger graceful shutdown. Logging uses the local singleton `LoggerService`; `app.ts` receives its interface from `server.ts`.
+
+Development uses `tsx watch` to execute TypeScript with automatic restarts. Production builds with `tsc` and starts the emitted ESM with plain Node.js and source maps; no bundler or runtime TypeScript loader is required in production.
+
+Use `.js` extensions in relative TypeScript imports (including `/index.js` for directory entry points) so emitted imports work directly in Node.js. Use `import type` for types. Local configuration resolves the server-local `.env` with `import.meta.url` in both source and compiled code.
+
+For production, set `NODE_ENV=production`, `HOST`, and `PORT` through your hosting service, container, or process manager before running `npm start`. Production skips the local `.env` entirely and fails startup if required settings are missing or invalid. Choose `HOST` for the deployment network; containers commonly require `0.0.0.0` rather than the local-development loopback address. Keep real `.env` files out of Git.
 
 ## Implementation rules
 

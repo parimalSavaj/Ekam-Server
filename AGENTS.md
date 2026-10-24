@@ -10,6 +10,7 @@ Read all documents in `rules/general/` before the first implementation in a task
 | --- | --- |
 | Use cases and DTOs | `modules/application-rules.md` |
 | Routes, controllers, Zod validation | `modules/presentation-rules.md` |
+| Every route addition, path change, removal, or router mount change | `shared/route-path-rules.md` |
 | Dependency wiring | `modules/factory-rules.md` |
 | Repositories and SQL | `infrastructure/repositories-rules.md` |
 | Third-party integrations | `infrastructure/external-services-rules.md` |
@@ -31,7 +32,8 @@ All paths in this table are relative to `rules/`. Explicitly read the relevant d
 
 ## Architecture baseline
 
-- Use strict TypeScript, no `any`, ES import/export syntax with CommonJS compilation as specified in the general rules. Configure a compatible local runtime/build toolchain when the server is initialized.
+- Use strict TypeScript targeting ES2022, native ESM (`"type": "module"`), and `NodeNext` for both modules and module resolution. Do not compile to CommonJS.
+- Use `.js` extensions in relative imports, including type-only imports and explicit `/index.js` for directory entry points. Use `import type` for types and `import.meta.url` for module-relative paths. These rules also apply to illustrative import snippets in older rule documents.
 - Keep domain code pure. Put SQL and provider calls in infrastructure; put business orchestration in use cases or workers.
 - Feature flow: route -> factory-wired controller -> use case -> repository interface. Inject interfaces into use cases and workers; instantiate concrete infrastructure in module factories or the job registry.
 - Use one request/response DTO file and one use case per operation. DTOs are classes with private constructors and `fromRequest`/`toResponse` factories. Keep controllers thin.
