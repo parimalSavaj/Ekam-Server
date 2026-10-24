@@ -18,6 +18,7 @@ Read all documents in `rules/general/` before the first implementation in a task
 | Schema changes and seeds | `database/migration-rules.md` |
 | Workers and job registration | `jobs/worker-rules.md` |
 | Shared services and queues | `shared/services-rules.md`, plus `shared/queue-service-rules.md` for queues |
+| Database service, connection config, pooling | `shared/database-service-rules.md` |
 | Configuration, errors, middleware, type augmentation | Corresponding files in `shared/` |
 | Every API addition, change, or removal | `shared/swagger-rules.md` |
 
