@@ -56,6 +56,16 @@ These clarifications take precedence over conflicting summaries or illustrative 
 
 Human instructions in the current task take precedence over repository guidance. Record deliberate architectural changes here and update the corresponding rule documents so future work stays consistent.
 
+## Better Auth integration boundary
+
+- Google-only authentication is implemented by Better Auth. Its protocol routes in `modules/auth/presentation/auth.routes.ts` delegate directly to the library handler; no duplicate DTOs, controllers, password logic, JWT service, or repositories are needed for those routes.
+- `infrastructure/auth/create-auth.ts` owns provider and adapter configuration. The shared `AuthService` is a deliberate integration facade allowed to import that factory and its inferred types. `server.ts` composes it with the existing managed PostgreSQL pool via `DatabaseService.getAuthPool()`; only DatabaseService closes that pool.
+- Authentication uses database-backed cookie sessions. `AuthMiddleware.requireSession()` checks Better Auth sessions for application routes, rather than the JWT examples in older rules. Future application endpoints retain the normal controller/use-case/repository architecture.
+- Better Auth owns validation and unwrapped responses under `/api/auth`. Its OpenAPI plugin provides the live auth contract at `/api/auth/open-api/generate-schema`; the application Swagger contract links to it instead of duplicating library endpoints. No email/password, account linking, or token retrieval APIs are exposed.
+- SQL lives in `server/migrations/`, with scripts under `server/scripts/database/`. The runner owns migration transactions, checksums and an advisory lock. `schema_migrations` uses its migration filename as the natural primary key (exception to entity UUID IDs).
+- Auth IDs are UUIDs generated in the application through Better Auth's `generateId` callback. This library boundary replaces the illustrative `IIdService` requirement; all auth timestamp columns use TIMESTAMPTZ.
+- Local Google credentials were copied once from the legacy env at the user's explicit request. Runtime code must still read only the new server's own configuration, never legacy files.
+
 ## Completion checks
 
 - Once the TypeScript toolchain exists, run the local `npx tsc --noEmit` after code changes; it must pass with zero errors. Use only dependencies installed in this repo.

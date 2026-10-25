@@ -1,4 +1,5 @@
 import { App } from "./app.js";
+import { AuthService } from "./shared/services/auth/auth.service.js";
 import { DatabaseService } from "./shared/services/database/database.service.js";
 import { LoggerService } from "./shared/services/logger/logger.service.js";
 
@@ -17,7 +18,8 @@ async function main(): Promise<void> {
     throw error;
   }
 
-  const app = App.create(logger, config.isDevelopment);
+  const auth = AuthService.getInstance(db.getAuthPool(), logger);
+  const app = App.create(logger, config.isDevelopment, auth, config.auth.clientURL);
   const server = app.listen(config.port, config.host, () => {
     logger.info("Server started", { host: config.host, port: config.port });
   });

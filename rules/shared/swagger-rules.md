@@ -86,6 +86,8 @@ export const <feature>Docs: Record<string, Record<string, unknown>> = {
 - Tags group endpoints by feature — tag name matches the module (e.g., `"Auth"`, `"Users"`).
 - Protected endpoints must include a `security` field matching the implemented authentication scheme. Use `security: [{ bearerAuth: [] }]` only when bearer authentication is actually implemented.
 
+Better Auth protocol endpoints are documented by the library's live OpenAPI schema at `/api/auth/open-api/generate-schema`. Link to that contract from application Swagger metadata; preserve library-native responses instead of wrapping them in `ApiResponse`. See `AGENTS.md` for this integration exception.
+
 ## Index — `docs/index.ts`
 
 Merges all feature doc files into a single `swaggerPaths` export.

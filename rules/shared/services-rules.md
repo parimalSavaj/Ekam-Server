@@ -2,6 +2,8 @@
 
 ## Location
 
+Better Auth integration exception: `AuthService` is a singleton facade over `infrastructure/auth/create-auth.ts` and may import its inferred session types. It receives the managed `pg.Pool` only at composition time; see `AGENTS.md`.
+
 - All shared services live in `src/shared/services/` — one folder per service.
 - These are cross-cutting services used across the entire app (logger, database, jwt, hash, swagger, etc.).
 

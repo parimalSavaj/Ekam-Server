@@ -47,6 +47,8 @@ This generates a timestamped file in `migrations/` with a blank template.
 
 ## Column Type Standards
 
+Integration exceptions: Better Auth creates UUIDs through its configured application-side generator. `schema_migrations` uses `filename TEXT PRIMARY KEY`, a natural identity for migration history; it is not a domain entity. See `AGENTS.md`.
+
 - Always use `UUID` (native PostgreSQL type) for all `id` (primary key) and foreign key columns — IDs are UUIDs generated application-side via `IIdService`, never database-generated sequences. The `UUID` type is stored as 16 bytes (more efficient than `VARCHAR(36)`) and validates format automatically.
 - Always use `TIMESTAMPTZ` (not `TIMESTAMP`) for all timestamp columns.
 - Use `TEXT` instead of `VARCHAR(n)` for variable-length strings with no meaningful upper bound (e.g. tokens, URLs, descriptions). Use `VARCHAR(n)` only when the length limit is a real business constraint (e.g. `name VARCHAR(100)`).

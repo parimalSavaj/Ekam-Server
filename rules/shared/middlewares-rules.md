@@ -2,6 +2,8 @@
 
 ## Location
 
+Current authentication uses Better Auth cookie sessions through `AuthMiddleware.requireSession()`. The JWT examples below are legacy illustrations and do not prescribe the implemented auth scheme. Resolve sessions through `IAuthService`; never accept a user ID from the client as authentication.
+
 - All global middlewares live in `src/shared/middlewares/`.
 - These are reusable middleware functions applied across multiple routes or modules.
 

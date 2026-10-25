@@ -5,8 +5,10 @@ FROM node:24-slim
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci && node -e "const fs=require('fs'),c=require('crypto'); fs.writeFileSync('node_modules/.ekam-lock-hash', c.createHash('sha256').update(fs.readFileSync('package-lock.json')).digest('hex'))"
 
 COPY . .
+
+ENTRYPOINT ["node", "docker-entrypoint.mjs"]
 
 CMD ["npm", "run", "dev"]

@@ -20,6 +20,10 @@ if (process.env.NODE_ENV !== "production") {
 const requiredText = z.string().trim().min(1);
 const port = z.coerce.number().int().min(1).max(65535);
 const positiveInt = z.coerce.number().int().positive();
+const origin = z.url({ protocol: /^https?$/ }).refine(value => {
+  const url = new URL(value);
+  return url.pathname === "/" && !url.search && !url.hash && !url.username && !url.password;
+}, "Must be an HTTP(S) origin without a path");
 
 // Docker Compose passes unset variables as empty strings; treat those as not set.
 const optionalEnv = <T extends z.ZodType>(schema: T) =>
@@ -32,6 +36,12 @@ const envSchema = z.object({
   HOST: requiredText,
   PORT: port,
   NODE_ENV: z.enum(["development", "test", "production"]),
+  BETTER_AUTH_URL: origin,
+  CLIENT_URL: origin,
+  BETTER_AUTH_SECRET: z.string().min(32),
+  GOOGLE_CLIENT_ID: requiredText,
+  GOOGLE_CLIENT_SECRET: z.string().min(1),
+  MIGRATION_DATABASE_URL: optionalEnv(z.url({ protocol: /^postgres(ql)?$/ })),
 
   // Database: set DATABASE_URL (hosted PostgreSQL such as Neon) or all five DB_* values (local Docker).
   DATABASE_URL: optionalEnv(z.url({ protocol: /^postgres(ql)?$/ })),
@@ -66,6 +76,19 @@ const configSchema = envSchema.transform((env: Env, ctx) => {
   const { DATABASE_URL, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } = env;
   const parts = { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME };
   const setParts = Object.entries(parts).filter(([, value]) => value !== undefined);
+  if (env.NODE_ENV === "production") {
+    if (![env.BETTER_AUTH_URL, env.CLIENT_URL].every(value => value.startsWith("https://"))) {
+      ctx.issues.push({ code: "custom", message: "BETTER_AUTH_URL and CLIENT_URL require HTTPS in production", input: env });
+      return z.NEVER;
+    }
+    if (env.MIGRATION_DATABASE_URL) {
+      const mode = new URL(env.MIGRATION_DATABASE_URL).searchParams.get("sslmode");
+      if (!mode || INSECURE_SSL_MODES.has(mode)) {
+        ctx.issues.push({ code: "custom", message: "MIGRATION_DATABASE_URL requires TLS in production", input: env });
+        return z.NEVER;
+      }
+    }
+  }
 
   if (DATABASE_URL !== undefined) {
     if (setParts.length > 0) {
@@ -130,8 +153,16 @@ export const config = {
   host: parsed.data.HOST,
   port: parsed.data.PORT,
   isDevelopment: parsed.data.NODE_ENV === "development",
+  auth: {
+    baseURL: new URL(parsed.data.BETTER_AUTH_URL).origin,
+    clientURL: new URL(parsed.data.CLIENT_URL).origin,
+    secret: parsed.data.BETTER_AUTH_SECRET,
+    googleClientId: parsed.data.GOOGLE_CLIENT_ID,
+    googleClientSecret: parsed.data.GOOGLE_CLIENT_SECRET,
+  },
   database: {
     connectionString: parsed.data.connectionString,
+    migrationConnectionString: parsed.data.MIGRATION_DATABASE_URL ?? parsed.data.connectionString,
     poolMax: parsed.data.DB_POOL_MAX,
     connectionTimeoutMs: parsed.data.DB_CONNECTION_TIMEOUT_MS,
     idleTimeoutMs: parsed.data.DB_IDLE_TIMEOUT_MS,

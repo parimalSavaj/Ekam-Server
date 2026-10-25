@@ -80,6 +80,11 @@ export class DatabaseService implements IDatabaseService {
     return this.pool.connect();
   }
 
+  /** Infrastructure composition only: Better Auth shares this service's managed pool. */
+  getAuthPool(): pg.Pool {
+    return this.pool;
+  }
+
   close(): Promise<void> {
     return (this.closing ??= this.pool.end());
   }

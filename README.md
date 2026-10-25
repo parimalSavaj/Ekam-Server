@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Create this repository's `.env` from `.env.example` before starting locally, then set `HOST`, `PORT`, and `NODE_ENV`. All three are required and validated at startup; there are no silent defaults. The example uses `http://127.0.0.1:5000`. No database or credentials are needed for the health endpoint.
+Create this repository's `.env` from `.env.example` before starting locally, then set `HOST`, `PORT`, and `NODE_ENV`. All three are required and validated at startup; there are no silent defaults. The example uses `http://127.0.0.1:5000`. Startup requires the configured PostgreSQL database and Google auth settings. The health endpoint itself remains a liveness check.
 
 Local development/tests read only this server's `.env`, without overriding variables already set by the process. The file is optional when the process provides every required setting.
 
@@ -52,3 +52,15 @@ Read [AGENTS.md](AGENTS.md) before backend work. It defines how to load the loca
 These are intentionally maintained project rules, not generated tool files. Keep them with this server repository so future feature work follows the same architecture in a standalone checkout.
 
 No source code, packages, environment files, or services from the legacy repositories are required by this rules setup. Stop any agent-started server or worker after testing.
+
+## Google-only authentication and migrations
+
+Use the root `make start` to run pending migrations before the API starts. Migrations are SQL files in `migrations/`; `make migration name=description`, `make migrate`, and `make migration-status` run the server-owned tools in Docker. Inside this repo the equivalent npm scripts are `db:create-migration`, `db:migrate`, and `db:status`.
+
+Configure `BETTER_AUTH_URL`, `CLIENT_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` using `.env.example`. Runtime reads only this server's configuration. Google redirects to `/api/auth/callback/google`. Email/password login, password reset, email change, account linking/unlinking and provider-token APIs are disabled. OAuth state is stored in `verifications`; no mail service is used.
+
+Better Auth owns `/api/auth/*` and its native responses. Its generated contract is available at `/api/auth/open-api/generate-schema`, with a development reference UI at `/api/auth/reference`. The app Swagger metadata links to this contract. Profile updates, session listing/revocation, logout and fresh-session account deletion use the library APIs directly. Sessions last seven days, update daily, and are considered fresh for five minutes for sensitive operations. A missing/revoked/expired session is rejected by protected endpoints. Future application endpoints must apply `AuthMiddleware.requireSession()` explicitly.
+
+Auth shares DatabaseService's managed pool and shutdown lifecycle. Generated UUID IDs and reviewed SQL use snake_case mappings and TIMESTAMPTZ. The migration runner owns transactions and a session-scoped advisory lock; hosted transaction pooling requires a direct/session-pooled `MIGRATION_DATABASE_URL`. Rate limits currently use process memory; multi-instance production needs shared rate-limit storage or an ingress limit.
+
+Run `npm run typecheck:scripts` to check migration tooling alongside application sources. `tsx` executes TypeScript scripts without type checking, so this separate development check catches type errors before running migrations.

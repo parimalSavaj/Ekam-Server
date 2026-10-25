@@ -2,6 +2,8 @@
 
 ## Location
 
+Better Auth protocol routes are an explicit exception: delegate to its handler as documented in `AGENTS.md`. The library owns request validation, cookies, and response shapes; application features continue to follow the rules below.
+
 - Lives inside each feature module at `src/modules/<name>/presentation/`.
 - Contains exactly three files per module: routes, controller, validation.
 

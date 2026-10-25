@@ -7,18 +7,25 @@
     "dev": "tsx watch src/server.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
-    "start": "node --enable-source-maps dist/server.js"
+    "start": "node --enable-source-maps dist/server.js",
+    "db:create-migration": "tsx scripts/database/create-migration.ts",
+    "db:migrate": "tsx scripts/database/migrate.ts",
+    "db:status": "tsx scripts/database/migrate.ts --status",
+    "typecheck:scripts": "tsc --project tsconfig.scripts.json --noEmit"
   },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
+    "better-auth": "1.7.13",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "pg": "8.23.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^22",
     "@types/pg": "8.23.1",

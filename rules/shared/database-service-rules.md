@@ -25,6 +25,8 @@
 
 ## Methods
 
+`getAuthPool()` is also available on the concrete service for infrastructure composition in `server.ts` only. Better Auth shares this pool; it must not close it or create an unmanaged duplicate. Application repositories continue to use `IDatabaseService`.
+
 Only these methods exist: `connect`, `select`, `selectOne`, `insert`, `execute` (returns affected rows), `getClient`, `close`. Add more only when a use case needs them. Always pass values as parameters (`$1`, `$2`), never by string interpolation.
 
 ## Transactions
