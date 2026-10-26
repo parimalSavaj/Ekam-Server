@@ -1,6 +1,7 @@
 import { App } from "./app.js";
 import { AuthService } from "./shared/services/auth/auth.service.js";
 import { DatabaseService } from "./shared/services/database/database.service.js";
+import { IdService } from "./shared/services/id/id.service.js";
 import { LoggerService } from "./shared/services/logger/logger.service.js";
 
 const logger = LoggerService.getInstance();
@@ -19,7 +20,8 @@ async function main(): Promise<void> {
   }
 
   const auth = AuthService.getInstance(db.getAuthPool(), logger);
-  const app = App.create(logger, config.isDevelopment, auth, config.auth.clientURL);
+  const ids = IdService.getInstance();
+  const app = App.create(logger, config.isDevelopment, auth, config.auth.clientURL, db, ids);
   const server = app.listen(config.port, config.host, () => {
     logger.info("Server started", { host: config.host, port: config.port });
   });

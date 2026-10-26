@@ -7,4 +7,10 @@ export const ROUTE_PATHS = {
   SYSTEM: {
     HEALTH: "/health",
   },
+  // Full paths: the workspaces router is mounted at the app root. Express syntax (:id);
+  // the OpenAPI docs derive "{id}" from these with toOpenApiPath().
+  WORKSPACES: {
+    BASE: "/api/workspaces",
+    BY_ID: "/api/workspaces/:id",
+  },
 } as const;

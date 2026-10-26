@@ -1,7 +1,7 @@
 import type { ErrorRequestHandler } from "express";
 import { HTTP_STATUS } from "../constants/status-code.constants.js";
 import type { ILoggerService } from "../services/logger/logger.service.interface.js";
-import { ApiError } from "./api-error.js";
+import { ApiError, ValidationError } from "./api-error.js";
 
 export class ErrorHandler {
   constructor(
@@ -15,8 +15,9 @@ export class ErrorHandler {
       return;
     }
 
-    if (error instanceof ApiError) {
-      res.status(error.statusCode).json(error.toJSON());
+    const apiError = this.toApiError(error);
+    if (apiError) {
+      res.status(apiError.statusCode).json(apiError.toJSON());
       return;
     }
 
@@ -27,4 +28,14 @@ export class ErrorHandler {
       ...(this.isDevelopment && error instanceof Error ? { stack: error.stack } : {}),
     });
   };
+
+  /** Maps known client mistakes (including JSON body parser failures) to safe API errors. */
+  private toApiError(error: unknown): ApiError | null {
+    if (error instanceof ApiError) return error;
+
+    const type = typeof error === "object" && error !== null && "type" in error ? error.type : undefined;
+    if (type === "entity.parse.failed") return new ValidationError("Request body must be valid JSON");
+    if (type === "entity.too.large") return new ApiError(HTTP_STATUS.PAYLOAD_TOO_LARGE, "Request body is too large");
+    return null;
+  }
 }

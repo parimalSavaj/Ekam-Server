@@ -61,10 +61,18 @@ Human instructions in the current task take precedence over repository guidance.
 - Google-only authentication is implemented by Better Auth. Its protocol routes in `modules/auth/presentation/auth.routes.ts` delegate directly to the library handler; no duplicate DTOs, controllers, password logic, JWT service, or repositories are needed for those routes.
 - `infrastructure/auth/create-auth.ts` owns provider and adapter configuration. The shared `AuthService` is a deliberate integration facade allowed to import that factory and its inferred types. `server.ts` composes it with the existing managed PostgreSQL pool via `DatabaseService.getAuthPool()`; only DatabaseService closes that pool.
 - Authentication uses database-backed cookie sessions. `AuthMiddleware.requireSession()` checks Better Auth sessions for application routes, rather than the JWT examples in older rules. Future application endpoints retain the normal controller/use-case/repository architecture.
+- On success `requireSession()` sets `req.user = { userId }` (typed in `shared/@types/express.d.ts`, `AuthenticatedUser` in `shared/services/auth/auth.types.ts`); without a session it forwards `UnauthorizedError`. Request DTOs read the acting user only from `req.user`, never from the body, params or query.
 - Better Auth owns validation and unwrapped responses under `/api/auth`. Its OpenAPI plugin provides the live auth contract at `/api/auth/open-api/generate-schema`; the application Swagger contract links to it instead of duplicating library endpoints. No email/password, account linking, or token retrieval APIs are exposed.
 - SQL lives in `server/migrations/`, with scripts under `server/scripts/database/`. The runner owns migration transactions, checksums and an advisory lock. `schema_migrations` uses its migration filename as the natural primary key (exception to entity UUID IDs).
 - Auth IDs are UUIDs generated in the application through Better Auth's `generateId` callback. This library boundary replaces the illustrative `IIdService` requirement; all auth timestamp columns use TIMESTAMPTZ.
 - Local Google credentials were copied once from the legacy env at the user's explicit request. Runtime code must still read only the new server's own configuration, never legacy files.
+
+## Application API conventions
+
+- `express.json({ limit: "10kb" })` is mounted in `app.ts` after the Better Auth routes, which read their own request bodies. Keep it after them. Body-parser failures are mapped to 400 and 413 by `ErrorHandler`.
+- Application IDs are UUIDv7 values (timestamp prefix plus random bits, generated with the pinned `uuid` package) from `IIdService` (`shared/services/id/`), injected into use cases. They fit the `UUID` column type, so no schema change is involved. Better Auth's own IDs still use `randomUUID()` in `create-auth.ts`.
+- `ValidationMiddleware` returns the Zod issue messages to the client, so schemas must carry readable custom messages.
+- Workspaces (`modules/workspaces`, routes under `/api/workspaces`) belong to one user through `workspaces.owner_id` (`ON DELETE CASCADE`, hard delete). Every query is scoped by the owner's id, and another user's workspace answers 404, exactly like a missing one. There are no membership or role tables yet; add them with the approved Team Collaboration or RBAC feature, backfilling from `owner_id`.
 
 ## Completion checks
 

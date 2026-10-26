@@ -64,3 +64,17 @@ Better Auth owns `/api/auth/*` and its native responses. Its generated contract 
 Auth shares DatabaseService's managed pool and shutdown lifecycle. Generated UUID IDs and reviewed SQL use snake_case mappings and TIMESTAMPTZ. The migration runner owns transactions and a session-scoped advisory lock; hosted transaction pooling requires a direct/session-pooled `MIGRATION_DATABASE_URL`. Rate limits currently use process memory; multi-instance production needs shared rate-limit storage or an ingress limit.
 
 Run `npm run typecheck:scripts` to check migration tooling alongside application sources. `tsx` executes TypeScript scripts without type checking, so this separate development check catches type errors before running migrations.
+
+## Workspaces API
+
+Every endpoint requires the Better Auth session cookie and only touches the signed-in user's own workspaces. Responses use the standard `{ statusCode, data }` envelope; errors use `{ statusCode, message }`.
+
+| Method | Path | Result |
+| --- | --- | --- |
+| `POST` | `/api/workspaces` | Create a workspace from `{ "name": "..." }` (1-100 characters, trimmed). Returns 201 |
+| `GET` | `/api/workspaces` | `{ workspaces: [...] }`, oldest first |
+| `GET` | `/api/workspaces/{id}` | One workspace |
+| `PATCH` | `/api/workspaces/{id}` | Rename with `{ "name": "..." }` |
+| `DELETE` | `/api/workspaces/{id}` | Permanently delete; returns `{ id }` |
+
+A workspace owned by someone else is reported as 404, the same as a missing one. Deleting a user account deletes their workspaces. The schema comes from the `create-workspaces-table` migration (`make migrate`). The contract is in `src/shared/services/swagger/docs/workspaces.docs.ts`.
