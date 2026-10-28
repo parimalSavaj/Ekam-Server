@@ -78,3 +78,17 @@ Every endpoint requires the Better Auth session cookie and only touches the sign
 | `DELETE` | `/api/workspaces/{id}` | Permanently delete; returns `{ id }` |
 
 A workspace owned by someone else is reported as 404, the same as a missing one. Deleting a user account deletes their workspaces. The schema comes from the `create-workspaces-table` migration (`make migrate`). The contract is in `src/shared/services/swagger/docs/workspaces.docs.ts`.
+
+## Knowledge bases API
+
+A knowledge base lives inside one workspace. Every endpoint requires the Better Auth session cookie and only works for workspaces the signed-in user owns. Responses use the same `{ statusCode, data }` / `{ statusCode, message }` envelopes as workspaces.
+
+| Method | Path | Result |
+| --- | --- | --- |
+| `POST` | `/api/workspaces/{workspaceId}/knowledge-bases` | Create from `{ "name": "...", "description": "..." }`. `name` is 1-100 characters (trimmed); `description` is optional, up to 500 characters, and an empty one is stored as `null`. Returns 201 |
+| `GET` | `/api/workspaces/{workspaceId}/knowledge-bases` | `{ knowledgeBases: [...] }`, oldest first |
+| `GET` | `/api/workspaces/{workspaceId}/knowledge-bases/{id}` | One knowledge base |
+| `PATCH` | `/api/workspaces/{workspaceId}/knowledge-bases/{id}` | Update `name` and/or `description`. At least one is required; a field that is left out stays unchanged, and an empty or `null` description clears it |
+| `DELETE` | `/api/workspaces/{workspaceId}/knowledge-bases/{id}` | Permanently delete; returns `{ id }` |
+
+A workspace or knowledge base that is missing, in another workspace, or owned by someone else is reported as 404. Names are not required to be unique. Deleting a workspace, or an account, deletes its knowledge bases. The schema comes from the `create-knowledge-bases-table` migration (`make migrate`). The contract is in `src/shared/services/swagger/docs/knowledge-bases.docs.ts`.

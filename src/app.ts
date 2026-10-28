@@ -2,6 +2,7 @@ import express, { type Express } from "express";
 import cors from "cors";
 import { AuthRoutes } from "./modules/auth/presentation/auth.routes.js";
 import type { IAuthService } from "./shared/services/auth/auth.service.interface.js";
+import { KnowledgeBasesRoutes } from "./modules/knowledge-bases/presentation/knowledge-bases.routes.js";
 import { HealthRoutes } from "./modules/system/health.routes.js";
 import { WorkspacesRoutes } from "./modules/workspaces/presentation/workspaces.routes.js";
 import { NotFoundError } from "./shared/core/api-error.js";
@@ -29,6 +30,7 @@ export class App {
     app.use(express.json({ limit: "10kb" }));
     app.use(new HealthRoutes().getRouter());
     app.use(new WorkspacesRoutes(db, logger, ids, auth).getRouter());
+    app.use(new KnowledgeBasesRoutes(db, logger, ids, auth).getRouter());
     app.use((_req, _res, next): void => next(new NotFoundError()));
     app.use(errorHandler.handleError);
 

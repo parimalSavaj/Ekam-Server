@@ -13,4 +13,9 @@ export const ROUTE_PATHS = {
     BASE: "/api/workspaces",
     BY_ID: "/api/workspaces/:id",
   },
+  // Full paths, nested under a workspace. The knowledge bases router is mounted at the app root.
+  KNOWLEDGE_BASES: {
+    BASE: "/api/workspaces/:workspaceId/knowledge-bases",
+    BY_ID: "/api/workspaces/:workspaceId/knowledge-bases/:id",
+  },
 } as const;

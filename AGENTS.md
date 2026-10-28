@@ -74,6 +74,8 @@ Human instructions in the current task take precedence over repository guidance.
 - `ValidationMiddleware` returns the Zod issue messages to the client, so schemas must carry readable custom messages.
 - Workspaces (`modules/workspaces`, routes under `/api/workspaces`) belong to one user through `workspaces.owner_id` (`ON DELETE CASCADE`, hard delete). Every query is scoped by the owner's id, and another user's workspace answers 404, exactly like a missing one. There are no membership or role tables yet; add them with the approved Team Collaboration or RBAC feature, backfilling from `owner_id`.
 
+- Knowledge bases (`modules/knowledge-bases`, routes under `/api/workspaces/:workspaceId/knowledge-bases`) belong to one workspace through `knowledge_bases.workspace_id` (`ON DELETE CASCADE`, hard delete). Until membership and roles exist, "may act on a knowledge base" means "owns its workspace": create and list check the workspace with `IWorkspacesRepository.findByIdAndOwnerId`, and get, update and delete scope the SQL with an `EXISTS` on `workspaces.owner_id`. A missing knowledge base, one in another workspace, and one in someone else's workspace all answer 404. When Team Collaboration or RBAC arrives, replace those owner checks with the membership and role check in one place (the use cases and `OWNS_WORKSPACE` in the repository). Names are not unique, and descriptions are optional (up to 500 characters, empty means `null`).
+
 ## Completion checks
 
 - Once the TypeScript toolchain exists, run the local `npx tsc --noEmit` after code changes; it must pass with zero errors. Use only dependencies installed in this repo.
