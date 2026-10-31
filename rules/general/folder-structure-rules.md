@@ -78,6 +78,7 @@ src/
 │   │   ├── users.factory.ts
 │   │   ├── interfaces/            # Module-specific interfaces (if needed)
 │   │   ├── types/                 # Module-specific types (if needed)
+│   │   ├── mappers/               # Module-specific mappers (if needed)
 │   │   ├── application/
 │   │   │   ├── dtos/
 │   │   │   │   ├── create-user.dto.ts
@@ -143,6 +144,7 @@ src/
   - `<name>.factory.ts` — at module root. Wires repo + use cases → creates and returns controller.
   - `interfaces/` — module-specific interfaces, only created when the module needs them.
   - `types/` — module-specific types, only created when the module needs them.
+  - `mappers/` — module-specific mappers, only created when the module needs them. A mapper translates one representation into another (for example an uploaded file name into a source type). It is a class with static methods, has no I/O and no dependencies, and use cases may import it. Business rule checks that throw errors stay in the use case.
   - `application/` — use cases and DTOs only.
   - `application/dtos/` — one file per use case, exports both request and response DTO.
   - `presentation/` — routes, controller, validation. One file each.
@@ -168,6 +170,7 @@ application/use-cases
   → shared/services/<name>/<name>.types                                  (service-related types like jwt.types.ts)
   → shared/services/<name>/<name>.service.interface                      (for IHashService, IJwtService, IQueueService, etc.)
   → jobs/workers/<job-name>/<job-name>.types                             (job payload types + name constant — for dispatching only)
+  → mappers/<name>.mapper                                                (this module's mappers, only when needed)
   → domain/entities
   → domain/enums
 

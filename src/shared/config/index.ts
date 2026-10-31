@@ -56,6 +56,17 @@ const envSchema = z.object({
   DB_CONNECTION_TIMEOUT_MS: positiveInt.default(10_000),
   DB_IDLE_TIMEOUT_MS: positiveInt.default(30_000),
   DB_STATEMENT_TIMEOUT_MS: positiveInt.default(30_000),
+
+  // Object storage for uploaded source files: Amazon S3 in production, MinIO in development.
+  // S3_ENDPOINT is only for S3-compatible servers such as MinIO; leave it unset for Amazon S3.
+  S3_BUCKET: requiredText,
+  S3_REGION: requiredText,
+  S3_ACCESS_KEY_ID: requiredText,
+  S3_SECRET_ACCESS_KEY: requiredText,
+  S3_ENDPOINT: optionalEnv(z.url({ protocol: /^https?$/ })),
+
+  // Largest accepted source file, in megabytes. Not a secret, so it has a default.
+  UPLOAD_MAX_FILE_MB: positiveInt.default(20),
 });
 
 type Env = z.infer<typeof envSchema>;
@@ -167,5 +178,17 @@ export const config = {
     connectionTimeoutMs: parsed.data.DB_CONNECTION_TIMEOUT_MS,
     idleTimeoutMs: parsed.data.DB_IDLE_TIMEOUT_MS,
     statementTimeoutMs: parsed.data.DB_STATEMENT_TIMEOUT_MS,
+  },
+  storage: {
+    bucket: parsed.data.S3_BUCKET,
+    region: parsed.data.S3_REGION,
+    accessKeyId: parsed.data.S3_ACCESS_KEY_ID,
+    secretAccessKey: parsed.data.S3_SECRET_ACCESS_KEY,
+    endpoint: parsed.data.S3_ENDPOINT,
+    // S3-compatible servers such as MinIO are addressed as host/bucket/key.
+    forcePathStyle: parsed.data.S3_ENDPOINT !== undefined,
+  },
+  uploads: {
+    maxFileBytes: parsed.data.UPLOAD_MAX_FILE_MB * 1024 * 1024,
   },
 } as const;

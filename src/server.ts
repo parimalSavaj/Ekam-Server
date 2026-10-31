@@ -21,7 +21,16 @@ async function main(): Promise<void> {
 
   const auth = AuthService.getInstance(db.getAuthPool(), logger);
   const ids = IdService.getInstance();
-  const app = App.create(logger, config.isDevelopment, auth, config.auth.clientURL, db, ids);
+  const app = App.create(
+    logger,
+    config.isDevelopment,
+    auth,
+    config.auth.clientURL,
+    db,
+    ids,
+    config.storage,
+    config.uploads.maxFileBytes,
+  );
   const server = app.listen(config.port, config.host, () => {
     logger.info("Server started", { host: config.host, port: config.port });
   });

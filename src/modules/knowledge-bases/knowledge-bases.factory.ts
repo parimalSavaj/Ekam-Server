@@ -1,4 +1,7 @@
+import { StorageExternalService } from "../../infrastructure/external-services/storage/storage.external-service.js";
+import type { StorageOptions } from "../../infrastructure/external-services/storage/storage.types.js";
 import { KnowledgeBasesRepository } from "../../infrastructure/repositories/knowledge-bases/knowledge-bases.repository.js";
+import { SourcesRepository } from "../../infrastructure/repositories/sources/sources.repository.js";
 import { WorkspacesRepository } from "../../infrastructure/repositories/workspaces/workspaces.repository.js";
 import type { IDatabaseService } from "../../shared/services/database/database.service.interface.js";
 import type { IIdService } from "../../shared/services/id/id.service.interface.js";
@@ -11,17 +14,25 @@ import { UpdateKnowledgeBaseUseCase } from "./application/update-knowledge-base.
 import { KnowledgeBasesController } from "./presentation/knowledge-bases.controller.js";
 
 export class KnowledgeBasesFactory {
-  static create(db: IDatabaseService, logger: ILoggerService, ids: IIdService): KnowledgeBasesController {
-    // 1. Repositories (workspaces is used only to check the caller owns the workspace)
+  static create(
+    db: IDatabaseService,
+    logger: ILoggerService,
+    ids: IIdService,
+    storageOptions: StorageOptions,
+  ): KnowledgeBasesController {
+    // 1. Repositories and external services (workspaces is used only to check the caller owns the workspace;
+    //    sources and storage are used only to remove a deleted knowledge base's files)
     const workspacesRepository = new WorkspacesRepository(db);
     const knowledgeBasesRepository = new KnowledgeBasesRepository(db);
+    const sourcesRepository = new SourcesRepository(db);
+    const storage = new StorageExternalService(storageOptions);
 
     // 2. Use cases
     const createKnowledgeBase = new CreateKnowledgeBaseUseCase(workspacesRepository, knowledgeBasesRepository, ids, logger);
     const listKnowledgeBases = new ListKnowledgeBasesUseCase(workspacesRepository, knowledgeBasesRepository);
     const getKnowledgeBase = new GetKnowledgeBaseUseCase(knowledgeBasesRepository);
     const updateKnowledgeBase = new UpdateKnowledgeBaseUseCase(knowledgeBasesRepository, logger);
-    const deleteKnowledgeBase = new DeleteKnowledgeBaseUseCase(knowledgeBasesRepository, logger);
+    const deleteKnowledgeBase = new DeleteKnowledgeBaseUseCase(knowledgeBasesRepository, sourcesRepository, storage, logger);
 
     // 3. Controller
     return new KnowledgeBasesController(

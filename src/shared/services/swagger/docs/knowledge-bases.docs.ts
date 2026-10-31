@@ -123,7 +123,7 @@ export const knowledgeBasesDocs: Record<string, Record<string, unknown>> = {
     delete: {
       tags: ["Knowledge bases"],
       summary: "Delete a knowledge base",
-      description: "Permanently deletes a knowledge base. This cannot be undone.",
+      description: "Permanently deletes a knowledge base, its sources and their stored files. This cannot be undone.",
       security,
       parameters: [workspaceIdParameter, idParameter],
       responses: {

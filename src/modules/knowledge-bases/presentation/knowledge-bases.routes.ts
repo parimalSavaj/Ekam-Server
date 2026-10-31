@@ -1,4 +1,5 @@
 import { Router } from "express";
+import type { StorageOptions } from "../../../infrastructure/external-services/storage/storage.types.js";
 import { ROUTE_PATHS } from "../../../shared/constants/route-path.constants.js";
 import { AuthMiddleware } from "../../../shared/middlewares/auth.middleware.js";
 import { ValidationMiddleware } from "../../../shared/middlewares/validate.middleware.js";
@@ -27,8 +28,9 @@ export class KnowledgeBasesRoutes {
     logger: ILoggerService,
     ids: IIdService,
     private readonly auth: IAuthService,
+    storageOptions: StorageOptions,
   ) {
-    this.controller = KnowledgeBasesFactory.create(db, logger, ids);
+    this.controller = KnowledgeBasesFactory.create(db, logger, ids, storageOptions);
     this.setupRoutes();
   }
 
